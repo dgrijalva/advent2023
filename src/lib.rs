@@ -1,4 +1,5 @@
 mod client;
+mod puzzle;
 
 use clap::Parser;
 pub use client::DownloadCommand;

@@ -68,6 +68,7 @@ impl Client {
         Ok(())
     }
 
+    /// Get the input for the day. If the input file doesn't exist, download it.
     pub fn get_input(&self) -> Result<String, anyhow::Error> {
         if !self.input_path.exists() {
             self.download()?;

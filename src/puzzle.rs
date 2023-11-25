@@ -1,7 +1,8 @@
+mod day_00; // Template file. Not used, but imported so it will get checked for errors.
+macros::import_solutions!(); // Import the rest of the solution files
+
 use clap::Parser;
 use macros::get_solution;
-
-macros::import_solutions!();
 
 use crate::RootOpt;
 

@@ -34,7 +34,7 @@ pub fn get_solution(item: TokenStream) -> TokenStream {
     quote! {
         match #item.day as u32 {
             #solutions
-            _ => anyhow::bail!("No solution for day {}", #item.day),
+            _ => anyhow::bail!("No solution found for day {} (src/puzzle/day_{:02}.rs)", #item.day, #item.day),
         }
     }
     .into()
@@ -51,6 +51,7 @@ fn get_days() -> Vec<u32> {
             };
             Some(day)
         })
+        .filter(|d| *d > 0)
         .collect()
 }
 

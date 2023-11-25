@@ -1,9 +1,12 @@
 mod client;
 mod puzzle;
 
+pub use puzzle::Puzzle;
+
 use clap::Parser;
-pub use client::DownloadCommand;
+use client::DownloadCommand;
 use client::SubmitCommand;
+use puzzle::PuzzleCommand;
 
 #[derive(Parser, Debug, Clone)]
 pub struct RootOpt {
@@ -25,6 +28,7 @@ pub struct RootOpt {
 
 #[derive(Debug, Clone, clap::Subcommand)]
 enum Commands {
+    Puzzle(puzzle::PuzzleCommand),
     Download(DownloadCommand),
     Submit(SubmitCommand),
 }
@@ -37,7 +41,8 @@ impl RootOpt {
             return cmd.run(self);
         }
 
-        todo!("Run the day");
+        PuzzleCommand::default().run(self)?;
+
         Ok(())
     }
 }
@@ -47,6 +52,7 @@ impl Commands {
         match self {
             Commands::Download(cmd) => cmd.run(opt),
             Commands::Submit(cmd) => cmd.run(opt),
+            Commands::Puzzle(cmd) => cmd.run(opt),
         }
     }
 }

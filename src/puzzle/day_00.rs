@@ -6,15 +6,15 @@ use super::Puzzle;
 pub struct Day00;
 
 impl Puzzle for Day00 {
-    fn new(_ops: &super::RootOpt) -> Self {
-        Self
+    fn new(_ops: &super::RootOpt) -> Box<dyn Puzzle> {
+        Box::new(Self)
     }
 
-    fn part_one(_input: &str) -> super::PuzzleResult {
+    fn part_one(&self, _input: &str) -> super::PuzzleResult {
         todo!()
     }
 
-    fn part_two(_input: &str) -> super::PuzzleResult {
+    fn part_two(&self, _input: &str) -> super::PuzzleResult {
         todo!()
     }
 }

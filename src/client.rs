@@ -7,10 +7,16 @@ pub struct Client {
     pub client: AocClient,
     pub assignment_path: PathBuf,
     pub input_path: PathBuf,
+    pub year: i32,
+    pub day: u32,
 }
 
 #[derive(Parser, Debug, Clone)]
-pub struct DownloadCommand {}
+pub struct DownloadCommand {
+    /// Force download even if files already exist
+    #[arg(short, long)]
+    pub force: bool,
+}
 
 #[derive(Parser, Debug, Clone)]
 pub struct SubmitCommand {
@@ -33,26 +39,54 @@ impl Client {
             client,
             assignment_path,
             input_path,
+            year: opt.year as i32,
+            day: opt.day as u32,
         })
+    }
+
+    pub fn download(&self) -> Result<(), anyhow::Error> {
+        if !self.assignment_path.exists() {
+            self.client.save_puzzle_markdown()?;
+        }
+
+        if !self.input_path.exists() {
+            let input = self.client.get_input()?;
+            std::fs::write(format!("./input/day{:02}.txt", self.day), input)?;
+        }
+        Ok(())
+    }
+
+    /// Delete downloaded files
+    pub fn clear(&self) -> Result<(), anyhow::Error> {
+        if self.assignment_path.exists() {
+            std::fs::remove_file(&self.assignment_path)?;
+        }
+
+        if self.input_path.exists() {
+            std::fs::remove_file(&self.input_path)?;
+        }
+        Ok(())
+    }
+
+    pub fn get_input(&self) -> Result<String, anyhow::Error> {
+        if !self.input_path.exists() {
+            self.download()?;
+        }
+
+        let input = std::fs::read_to_string(&self.input_path)?;
+        Ok(input)
     }
 }
 
 impl DownloadCommand {
     pub fn run(&self, opt: &RootOpt) -> Result<(), anyhow::Error> {
         log::info!("Running download command");
-        log::info!("Day: {}", opt.day);
-        log::info!("Part: {}", opt.part);
 
         let client = Client::new(opt)?;
-
-        if !client.assignment_path.exists() {
-            client.client.save_puzzle_markdown()?;
+        if self.force {
+            client.clear()?;
         }
-
-        if !client.input_path.exists() {
-            let input = client.client.get_input()?;
-            std::fs::write(format!("./input/day{:02}.txt", opt.day), input)?;
-        }
+        client.download()?;
 
         Ok(())
     }

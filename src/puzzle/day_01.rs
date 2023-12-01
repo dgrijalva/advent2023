@@ -43,7 +43,7 @@ impl Day01 {
             .map(|(_, val)| val.to_string())
             .join("");
 
-        println!("SWAP: {} -> {}", input, data);
+        // println!("SWAP: {} -> {}", input, data);
         data
     }
 
@@ -54,15 +54,10 @@ impl Day01 {
             .iter()
             .enumerate()
             .flat_map(|(val, word)| {
-                input
-                    .match_indices(word)
-                    .map(|(idx, _)| (idx, val))
-                    .chain(
-                        input
-                            .match_indices(&val.to_string())
-                            .map(|(idx, _)| (idx, val)),
-                    )
-                    .collect_vec()
+                let words = input.match_indices(word).map(|(idx, _)| (idx, val));
+                let num = val.to_string();
+                let nums = input.match_indices(&num).map(|(idx, _)| (idx, val));
+                words.chain(nums).collect_vec()
             })
             .collect_vec()
     }

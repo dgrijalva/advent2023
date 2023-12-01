@@ -37,23 +37,34 @@ impl Day01 {
     ];
 
     fn swap_digits(input: &str) -> String {
-        let mut data = input.to_string();
-        while let Some((idx, val)) = Self::find_first(&data) {
-            let len = Self::NUMS[val].len();
-            data.replace_range(idx..(idx + len), &val.to_string());
-        }
+        let data = Self::find_all_matches(input)
+            .into_iter()
+            .sorted_by_key(|(idx, _)| *idx)
+            .map(|(_, val)| val.to_string())
+            .join("");
 
         println!("SWAP: {} -> {}", input, data);
         data
     }
 
-    // Find size/value of first number word
-    fn find_first(input: &str) -> Option<(usize, usize)> {
+    /// Find all matching numbers and words in the input
+    /// Return the index and the value of each match
+    fn find_all_matches(input: &str) -> Vec<(usize, usize)> {
         Self::NUMS
             .iter()
             .enumerate()
-            .filter_map(|(val, word)| input.find(word).map(|idx| (idx, val)))
-            .min_by(|(a, _), (b, _)| a.cmp(b))
+            .flat_map(|(val, word)| {
+                input
+                    .match_indices(word)
+                    .map(|(idx, _)| (idx, val))
+                    .chain(
+                        input
+                            .match_indices(&val.to_string())
+                            .map(|(idx, _)| (idx, val)),
+                    )
+                    .collect_vec()
+            })
+            .collect_vec()
     }
 }
 
@@ -79,9 +90,25 @@ mod test {
         assert_eq!(Day01::swap_digits("seven"), "7");
         assert_eq!(Day01::swap_digits("eight"), "8");
         assert_eq!(Day01::swap_digits("nine"), "9");
-        assert_eq!(Day01::swap_digits("eightwo"), "8wo");
-        assert_eq!(Day01::swap_digits("twone"), "2ne");
-        assert_eq!(Day01::swap_digits("sevenine"), "7ine");
-        assert_eq!(Day01::swap_digits("fiveight"), "5ight");
+        assert_eq!(Day01::swap_digits("eightwo"), "82");
+        assert_eq!(Day01::swap_digits("twone"), "21");
+        assert_eq!(Day01::swap_digits("sevenine"), "79");
+        assert_eq!(Day01::swap_digits("fiveight"), "58");
+    }
+
+    #[test]
+    fn test_sample_part_two() {
+        let res = Day01
+            .part_two(
+                "two1nine
+        eightwothree
+        abcone2threexyz
+        xtwone3four
+        4nineeightseven2
+        zoneight234
+        7pqrstsixteen",
+            )
+            .unwrap();
+        assert_eq!(res, "281".to_string());
     }
 }

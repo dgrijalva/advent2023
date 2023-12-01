@@ -25,6 +25,7 @@ dependencies = [
  "aoc-client",
  "clap",
  "env_logger",
+ "itertools",
  "log",
  "macros",
  "nom",

@@ -11,10 +11,10 @@ impl Puzzle for Day00 {
     }
 
     fn part_one(&self, _input: &str) -> super::PuzzleResult {
-        todo!()
+        todo!("implement part one")
     }
 
     fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!()
+        todo!("implement part two")
     }
 }

@@ -2,7 +2,6 @@
 //! Files in this folder are auto-discovered at build time.
 
 use super::Puzzle;
-use nom::IResult;
 
 pub struct Day02;
 
@@ -25,10 +24,18 @@ impl Puzzle for Day02 {
     }
 
     fn part_one(&self, input: &str) -> super::PuzzleResult {
-        let data = Self::parse_input(input);
-        println!("{:?}", data);
+        let games = Self::parse_input(input);
+        let score = games
+            .into_iter()
+            .filter(|g| {
+                g.rounds
+                    .iter()
+                    .all(|r| r.red <= 12 && r.green <= 13 && r.blue <= 14)
+            })
+            .map(|g| g.num)
+            .sum::<usize>();
 
-        todo!("implement part one")
+        Ok(score.to_string())
     }
 
     fn part_two(&self, _input: &str) -> super::PuzzleResult {
@@ -37,7 +44,7 @@ impl Puzzle for Day02 {
 }
 
 impl Day02 {
-    fn parse_input(mut input: &str) -> Vec<Game> {
+    fn parse_input(input: &str) -> Vec<Game> {
         let games = input
             .lines()
             .map(|line| {

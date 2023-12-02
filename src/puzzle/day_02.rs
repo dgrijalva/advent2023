@@ -38,8 +38,14 @@ impl Puzzle for Day02 {
         Ok(score.to_string())
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let games = Self::parse_input(input);
+        let score = games
+            .iter()
+            .map(Self::game_mins)
+            .map(|r| r.power())
+            .sum::<usize>();
+        Ok(score.to_string())
     }
 }
 
@@ -73,5 +79,23 @@ impl Day02 {
             }
         }
         round
+    }
+
+    fn game_mins(game: &Game) -> Round {
+        let mut min_round = Round::default();
+
+        for round in &game.rounds {
+            min_round.red = min_round.red.max(round.red);
+            min_round.blue = min_round.blue.max(round.blue);
+            min_round.green = min_round.green.max(round.green);
+        }
+
+        min_round
+    }
+}
+
+impl Round {
+    fn power(&self) -> usize {
+        self.red * self.blue * self.green
     }
 }

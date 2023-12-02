@@ -1,6 +1,8 @@
 mod day_00; // Template file. Not used, but imported so it will get checked for errors.
 macros::import_solutions!(); // Import the rest of the solution files
 
+use std::io::Read;
+
 use clap::Parser;
 use macros::get_solution;
 
@@ -32,10 +34,18 @@ pub struct PuzzleCommand {
 impl PuzzleCommand {
     pub fn run(&self, opt: &RootOpt) -> Result<(), anyhow::Error> {
         let client = crate::client::Client::new(opt)?;
+        let data = if opt.data {
+            let mut data = String::new();
+            std::io::stdin().read_to_string(&mut data)?;
+            data
+        } else {
+            client.get_input()?
+        };
+
         let day = get_solution!(opt);
         let solution = match opt.part {
-            1 => day.part_one(&client.get_input()?)?,
-            2 => day.part_two(&client.get_input()?)?,
+            1 => day.part_one(&data)?,
+            2 => day.part_two(&data)?,
             _ => todo!("Implement part three"),
         };
 

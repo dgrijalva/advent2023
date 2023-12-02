@@ -22,6 +22,10 @@ pub struct RootOpt {
     #[arg(short, long)]
     pub part: u8,
 
+    /// Read data from stdin instead of file
+    #[arg(long)]
+    pub data: bool,
+
     #[command(subcommand)]
     command: Option<Commands>,
 }

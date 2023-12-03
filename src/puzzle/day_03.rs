@@ -38,16 +38,22 @@ impl Puzzle for Day03 {
         let data: Schematic = input.parse().unwrap();
         let pairs: HashMap<Pos, Vec<usize>> = data
             .numbers()
+            // Find all the numbers that have a star adjacent to them
+            // Procduces a tuple of (star_pos, number)
             .filter_map(|(num, pos, len)| {
                 data.adjacent_symbols(pos, len)
                     .into_iter()
                     .find(|(_, d)| matches!(d, Datum::Symbol('*')))
                     .map(|(star_pos, _)| (star_pos, num))
             })
+            // Group the numbers by the position of the star
             .fold(HashMap::new(), |mut acc, (pos, num)| {
                 acc.entry(pos).or_default().push(num);
                 acc
             });
+
+        // For all the groups with exactly two numbers, multiply them together
+        // and sum the results
         let result = pairs
             .into_iter()
             .map(|(_, nums)| nums)
@@ -75,6 +81,8 @@ impl Schematic {
         })
     }
 
+    /// Takes the starting position and length and looks at all the adjacent
+    /// cells to see if there are any symbols. Returns a list of what it finds.
     fn adjacent_symbols(&self, pos: Pos, len: usize) -> Vec<(Pos, Datum)> {
         let Pos(px, py) = pos;
         let px2 = px + len - 1;
@@ -124,6 +132,8 @@ impl Schematic {
     }
 }
 
+/// Each position in the data holds a single digit. This is used to accumulate
+/// the digits into the number it's meant to represent, as we scan over a row.
 #[derive(Debug, Default)]
 struct NumberAccumulator {
     complete: Vec<(usize, Pos, usize)>,
@@ -154,9 +164,7 @@ impl NumberAccumulator {
     }
 
     fn complete(&mut self) -> Vec<(usize, Pos, usize)> {
-        if let Some(current) = self.current.take() {
-            self.complete.push(current);
-        }
+        self.commit();
         self.complete.clone()
     }
 }

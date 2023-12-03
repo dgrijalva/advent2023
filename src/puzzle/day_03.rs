@@ -2,12 +2,14 @@
 //! Files in this folder are auto-discovered at build time.
 
 use super::Puzzle;
+use std::collections::HashMap;
 use std::str::FromStr;
 
 pub struct Day03;
 
 struct Schematic(Vec<Vec<Datum>>);
-#[derive(Debug, Clone, Copy)]
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 struct Pos(usize, usize);
 
 #[derive(Debug, Clone, Copy)]
@@ -26,14 +28,34 @@ impl Puzzle for Day03 {
         let data: Schematic = input.parse().unwrap();
         let numbers = data
             .numbers()
-            .filter(|(_, pos, len)| data.has_adjacent_symbols(*pos, *len))
+            .filter(|(_, pos, len)| !data.adjacent_symbols(*pos, *len).is_empty())
             .map(|(n, _, _)| n)
             .sum::<usize>();
         Ok(numbers.to_string())
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let data: Schematic = input.parse().unwrap();
+        let pairs: HashMap<Pos, Vec<usize>> = data
+            .numbers()
+            .filter_map(|(num, pos, len)| {
+                data.adjacent_symbols(pos, len)
+                    .into_iter()
+                    .find(|(_, d)| matches!(d, Datum::Symbol('*')))
+                    .map(|(star_pos, _)| (star_pos, num))
+            })
+            .fold(HashMap::new(), |mut acc, (pos, num)| {
+                acc.entry(pos).or_default().push(num);
+                acc
+            });
+        let result = pairs
+            .into_iter()
+            .map(|(_, nums)| nums)
+            .filter(|nums| nums.len() == 2)
+            .map(|nums| nums[0] * nums[1])
+            .sum::<usize>();
+
+        Ok(result.to_string())
     }
 }
 
@@ -53,7 +75,7 @@ impl Schematic {
         })
     }
 
-    fn has_adjacent_symbols(&self, pos: Pos, len: usize) -> bool {
+    fn adjacent_symbols(&self, pos: Pos, len: usize) -> Vec<(Pos, Datum)> {
         let Pos(px, py) = pos;
         let px2 = px + len - 1;
 
@@ -64,33 +86,41 @@ impl Schematic {
             px2
         };
 
+        let mut symbols = Vec::new();
+
         // Above
         if py > 0 {
-            let above = &self.0[py - 1][left..=right];
-            if above.iter().any(|d| matches!(d, Datum::Symbol(_))) {
-                return true;
-            }
+            let y = py - 1;
+            symbols.extend(
+                (left..=right)
+                    .into_iter()
+                    .map(|x| (Pos(x, y), self.0[y][x]))
+                    .filter(|(_, d)| matches!(d, Datum::Symbol(_))),
+            );
         }
 
         // Before
         if px != left && matches!(self.0[py][left], Datum::Symbol(_)) {
-            return true;
+            symbols.push((Pos(left, py), self.0[py][left]));
         }
 
         // After
         if px != right && matches!(self.0[py][right], Datum::Symbol(_)) {
-            return true;
+            symbols.push((Pos(right, py), self.0[py][right]));
         }
 
         // Below
         if py + 1 < self.0.len() {
-            let below = &self.0[py + 1][left..=right];
-            if below.iter().any(|d| matches!(d, Datum::Symbol(_))) {
-                return true;
-            }
+            let y = py + 1;
+            symbols.extend(
+                (left..=right)
+                    .into_iter()
+                    .map(|x| (Pos(x, y), self.0[y][x]))
+                    .filter(|(_, d)| matches!(d, Datum::Symbol(_))),
+            );
         }
 
-        false
+        symbols
     }
 }
 

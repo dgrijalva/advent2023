@@ -1,6 +1,3 @@
-//! This is a template for a puzzle solution.  Copy this file to a new file.
-//! Files in this folder are auto-discovered at build time.
-
 use super::Puzzle;
 use std::collections::HashMap;
 use std::str::FromStr;

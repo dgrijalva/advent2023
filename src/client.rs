@@ -20,7 +20,7 @@ pub struct DownloadCommand {
 
 #[derive(Parser, Debug, Clone)]
 pub struct SubmitCommand {
-    pub answer: i32,
+    pub answer: i64,
 }
 
 impl Client {

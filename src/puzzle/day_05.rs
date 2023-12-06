@@ -4,6 +4,7 @@
 use super::Puzzle;
 use itertools::Itertools;
 use std::collections::BTreeMap;
+use std::ops::Range;
 use std::str::FromStr;
 
 pub struct Day05;
@@ -11,6 +12,7 @@ pub struct Day05;
 #[derive(Debug)]
 struct PuzzleInput {
     seeds: Vec<usize>,
+    seed_ranges: Vec<Range<usize>>,
     seed_soil: Table,
     soil_fertilizer: Table,
     fertilizer_water: Table,
@@ -40,7 +42,7 @@ impl Puzzle for Day05 {
 
     fn part_one(&self, input: &str) -> super::PuzzleResult {
         let input = PuzzleInput::from_str(input)?;
-        println!("{:#?}", input);
+        // println!("{:#?}", input);
 
         let mut locations = BTreeMap::new();
         for seed in &input.seeds {
@@ -51,8 +53,27 @@ impl Puzzle for Day05 {
         Ok(locations.pop_first().unwrap().0.to_string())
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let input = PuzzleInput::from_str(input)?;
+        // println!("{:#?}", input);
+
+        let mut locations = BTreeMap::new();
+        for seed in input
+            .seed_ranges
+            .iter()
+            .map(|r| r.clone().into_iter())
+            .flatten()
+        {
+            let location = input.lookup_location(seed);
+            locations.insert(location, seed);
+
+            // Keep only the two lowest values
+            while locations.len() > 2 {
+                locations.pop_last();
+            }
+        }
+
+        Ok(locations.pop_first().unwrap().0.to_string())
     }
 }
 
@@ -65,6 +86,18 @@ impl PuzzleInput {
         answer = self.light_temp.lookup(answer);
         answer = self.temp_humidity.lookup(answer);
         self.humidity_location.lookup(answer)
+    }
+
+    fn parse_seed_ranges(vals: Vec<usize>) -> Vec<Range<usize>> {
+        let mut vals = vals.into_iter();
+        let mut ranges = Vec::new();
+        loop {
+            let Some(start) = vals.next() else {
+                return ranges;
+            };
+            let len = vals.next().unwrap();
+            ranges.push(start..(start + len));
+        }
     }
 }
 
@@ -88,8 +121,16 @@ impl FromStr for PuzzleInput {
             .filter_map(|s| s.parse::<usize>().ok())
             .collect_vec();
 
+        let seed_ranges = Self::parse_seed_ranges(
+            parts[0]
+                .split(' ')
+                .filter_map(|s| s.parse::<usize>().ok())
+                .collect(),
+        );
+
         Ok(Self {
             seeds,
+            seed_ranges,
             seed_soil: parts[1].parse()?,
             soil_fertilizer: parts[2].parse()?,
             fertilizer_water: parts[3].parse()?,

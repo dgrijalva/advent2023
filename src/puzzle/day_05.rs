@@ -1,5 +1,6 @@
-//! This is a template for a puzzle solution.  Copy this file to a new file.
-//! Files in this folder are auto-discovered at build time.
+//! TODO: Naive solution takes ~18s on my laptop. It would be much faster to operate
+//!       directly on the ranges, instead of iterating over every value. Will try to
+//!       come back, once I'm caught up.
 
 use super::Puzzle;
 use itertools::Itertools;
@@ -63,7 +64,7 @@ impl Puzzle for Day05 {
         let result = input
             .seed_ranges
             .par_iter()
-            .map(|r| r.clone().into_iter())
+            .map(|r| r.clone())
             .flatten()
             .map(|seed| (seed, input.lookup_location(seed)))
             .reduce(

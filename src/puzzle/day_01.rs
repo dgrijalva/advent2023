@@ -10,7 +10,7 @@ impl Puzzle for Day01 {
 
     fn part_one(&self, input: &str) -> super::PuzzleResult {
         Ok(input
-            .split("\n")
+            .split('\n')
             .filter(|line| !line.is_empty())
             .map(|line| {
                 let numbers = line.chars().filter_map(|c| c.to_digit(10)).collect_vec();
@@ -24,8 +24,8 @@ impl Puzzle for Day01 {
 
     fn part_two(&self, input: &str) -> super::PuzzleResult {
         let real_input = input
-            .split("\n")
-            .map(|line| Self::swap_digits(line))
+            .split('\n')
+            .map(Self::swap_digits)
             .join("\n");
         self.part_one(&real_input)
     }
@@ -37,14 +37,14 @@ impl Day01 {
     ];
 
     fn swap_digits(input: &str) -> String {
-        let data = Self::find_all_matches(input)
+        
+
+        // println!("SWAP: {} -> {}", input, data);
+        Self::find_all_matches(input)
             .into_iter()
             .sorted_by_key(|(idx, _)| *idx)
             .map(|(_, val)| val.to_string())
-            .join("");
-
-        // println!("SWAP: {} -> {}", input, data);
-        data
+            .join("")
     }
 
     /// Find all matching numbers and words in the input

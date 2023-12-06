@@ -51,9 +51,7 @@ impl Puzzle for Day03 {
 
         // For all the groups with exactly two numbers, multiply them together
         // and sum the results
-        let result = pairs
-            .into_iter()
-            .map(|(_, nums)| nums)
+        let result = pairs.into_values()
             .filter(|nums| nums.len() == 2)
             .map(|nums| nums[0] * nums[1])
             .sum::<usize>();
@@ -98,7 +96,6 @@ impl Schematic {
             let y = py - 1;
             symbols.extend(
                 (left..=right)
-                    .into_iter()
                     .map(|x| (Pos(x, y), self.0[y][x]))
                     .filter(|(_, d)| matches!(d, Datum::Symbol(_))),
             );
@@ -119,7 +116,6 @@ impl Schematic {
             let y = py + 1;
             symbols.extend(
                 (left..=right)
-                    .into_iter()
                     .map(|x| (Pos(x, y), self.0[y][x]))
                     .filter(|(_, d)| matches!(d, Datum::Symbol(_))),
             );
@@ -143,7 +139,7 @@ impl NumberAccumulator {
             Datum::Number(n) => {
                 if let Some((number, _, len)) = &mut self.current {
                     *number = *number * 10 + n as usize;
-                    *len = *len + 1;
+                    *len += 1;
                 } else {
                     self.current = Some((n as usize, pos, 1));
                 }

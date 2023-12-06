@@ -56,7 +56,7 @@ impl Day02 {
                 let line = line.strip_prefix(": ").unwrap();
                 Game {
                     num: game_num.parse().unwrap(),
-                    rounds: line.split(';').map(|r| Self::parse_round(r)).collect(),
+                    rounds: line.split(';').map(Self::parse_round).collect(),
                 }
             })
             .collect();

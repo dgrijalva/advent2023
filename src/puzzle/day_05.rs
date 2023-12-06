@@ -24,7 +24,8 @@ struct PuzzleInput {
 
 #[derive(Debug)]
 struct Table {
-    name: String,
+    #[allow(dead_code)]
+    name: String, // For debug logging
     mappings: Vec<Mapping>,
 }
 

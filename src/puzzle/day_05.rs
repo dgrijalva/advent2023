@@ -3,6 +3,7 @@
 
 use super::Puzzle;
 use itertools::Itertools;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::collections::BTreeMap;
 use std::ops::Range;
 use std::str::FromStr;
@@ -57,24 +58,20 @@ impl Puzzle for Day05 {
     fn part_two(&self, input: &str) -> super::PuzzleResult {
         let input = PuzzleInput::from_str(input)?;
         // println!("{:#?}", input);
+        // correct answer: 52210644
 
-        let mut locations = BTreeMap::new();
-        for seed in input
+        let result = input
             .seed_ranges
-            .iter()
+            .par_iter()
             .map(|r| r.clone().into_iter())
             .flatten()
-        {
-            let location = input.lookup_location(seed);
-            locations.insert(location, seed);
+            .map(|seed| (seed, input.lookup_location(seed)))
+            .reduce(
+                || (0usize, usize::MAX),
+                |a, b| if b.1 < a.1 { b } else { a },
+            );
 
-            // Keep only the two lowest values
-            while locations.len() > 2 {
-                locations.pop_last();
-            }
-        }
-
-        Ok(locations.pop_first().unwrap().0.to_string())
+        Ok(result.1.to_string())
     }
 }
 

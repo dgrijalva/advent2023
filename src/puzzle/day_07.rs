@@ -44,7 +44,6 @@ impl Puzzle for Day07 {
         let mut hands = input
             .lines()
             .map(|l| l.parse::<Hand>().unwrap())
-            .update(|h| h.sort())
             .collect::<Vec<_>>();
         hands.sort();
 

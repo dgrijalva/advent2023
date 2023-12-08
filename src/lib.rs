@@ -19,7 +19,7 @@ pub struct RootOpt {
     pub day: u8,
 
     /// Part to run
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = 1)]
     pub part: u8,
 
     /// Read data from stdin instead of file

@@ -2,7 +2,6 @@
 //! Files in this folder are auto-discovered at build time.
 
 use super::Puzzle;
-use itertools::Itertools;
 use std::cmp::{Ord, Ordering, PartialOrd};
 use std::str::FromStr;
 
@@ -15,19 +14,20 @@ struct Hand {
     bid: usize,
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 enum HandType {
-    FiveOfKind,
-    FourOfKind,
-    FullHouse,
-    ThreeOfKind,
-    TwoPair,
-    Pair,
     HighCard,
+    Pair,
+    TwoPair,
+    ThreeOfKind,
+    FullHouse,
+    FourOfKind,
+    FiveOfKind,
 }
 
-#[derive(Debug, PartialEq, Eq, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 enum Card {
+    Joker,
     Number(u8), // 2-10
     Jack,
     Queen,
@@ -57,16 +57,23 @@ impl Puzzle for Day07 {
         Ok(result.to_string())
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
-    }
-}
+    // Correct answer: 251735672
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let mut hands = input
+            .replace('J', "X") // J is for Joker in part two
+            .lines()
+            .map(|l| l.parse::<Hand>().unwrap())
+            .collect::<Vec<_>>();
+        hands.sort();
 
-impl Hand {
-    /// Sort the cards within the hand, highest first
-    fn sort(&mut self) {
-        self.cards.sort();
-        self.cards.reverse();
+        let result = hands
+            .into_iter()
+            .enumerate()
+            .inspect(|(i, h)| println!("{}: {:?} -> {}", i + 1, h, (i + 1) * h.bid))
+            .map(|(i, h)| h.bid * (i + 1))
+            .sum::<usize>();
+
+        Ok(result.to_string())
     }
 }
 
@@ -79,21 +86,7 @@ impl Card {
             Self::Queen => 12,
             Self::King => 13,
             Self::Ace => 14,
-        }
-    }
-}
-
-impl HandType {
-    /// Assign numeric value, for sorting purposes
-    fn value(&self) -> u8 {
-        match self {
-            Self::FiveOfKind => 7,
-            Self::FourOfKind => 6,
-            Self::FullHouse => 5,
-            Self::ThreeOfKind => 4,
-            Self::TwoPair => 3,
-            Self::Pair => 2,
-            Self::HighCard => 1,
+            Self::Joker => 1,
         }
     }
 }
@@ -117,28 +110,18 @@ impl PartialEq for Hand {
 
 impl Eq for Hand {}
 
-impl PartialOrd for Card {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.value().partial_cmp(&other.value())
-    }
-}
-
-impl PartialOrd for HandType {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.value().partial_cmp(&other.value())
-    }
-}
-
 impl From<&[Card; 5]> for HandType {
     fn from(cards: &[Card; 5]) -> Self {
         let mut counts = [0; 15];
         for card in cards {
             counts[card.value() as usize] += 1;
         }
+        let jokers = counts[1];
+        let mut counts = counts[2..].to_vec();
         counts.sort();
         counts.reverse();
 
-        match counts[0] {
+        match counts[0] + jokers {
             5 => Self::FiveOfKind,
             4 => Self::FourOfKind,
             3 => {
@@ -196,7 +179,37 @@ impl From<char> for Card {
             'Q' => Self::Queen,
             'K' => Self::King,
             'A' => Self::Ace,
+            'X' => Self::Joker,
             _ => panic!("invalid card"),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_ranking() {
+        assert!(Card::Number(2) > Card::Joker);
+        assert!(Card::Jack > Card::Number(10));
+        assert!(Card::Queen > Card::Jack);
+        assert!(Card::Queen > Card::Joker);
+        assert!([Card::Joker, Card::Queen] > [Card::Joker, Card::Joker]);
+        assert!(
+            [
+                Card::Joker,
+                Card::Joker,
+                Card::Queen,
+                Card::Queen,
+                Card::Queen
+            ] > [
+                Card::Joker,
+                Card::Joker,
+                Card::Joker,
+                Card::Joker,
+                Card::Joker
+            ]
+        );
     }
 }

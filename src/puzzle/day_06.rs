@@ -44,6 +44,7 @@ fn distance(time_held: usize, total_time: usize) -> usize {
 
 #[cfg(test)]
 mod test {
+    #[test]
     fn test_speed() {
         assert_eq!(super::distance(1, 10), 9);
         assert_eq!(super::distance(2, 10), 16);

@@ -1,6 +1,8 @@
 use super::Puzzle;
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 
 pub struct Day08;
 
@@ -17,6 +19,12 @@ struct Node {
     right: String,
 }
 
+struct Path {
+    idx: usize,
+    rx: Receiver<usize>,
+    steps: Option<usize>,
+}
+
 impl Puzzle for Day08 {
     fn new(_ops: &super::RootOpt) -> Box<dyn Puzzle> {
         Box::new(Self)
@@ -24,8 +32,6 @@ impl Puzzle for Day08 {
 
     fn part_one(&self, input: &str) -> super::PuzzleResult {
         let (directions, nodes) = parse_input(input);
-        println!("directions: {:?}", directions);
-        println!("nodes: {:?}", nodes);
 
         let mut current_addr = "AAA".to_string();
         let mut steps = 0usize;
@@ -37,9 +43,6 @@ impl Puzzle for Day08 {
                     Direction::Right => current_addr = nodes[&current_addr].right.clone(),
                 }
                 steps += 1;
-                if steps % 1000 == 0 {
-                    println!("{}: {}", steps, current_addr);
-                }
                 if current_addr == "ZZZ" {
                     return Ok(steps.to_string());
                 }
@@ -47,8 +50,71 @@ impl Puzzle for Day08 {
         }
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let (directions, nodes) = parse_input(input);
+
+        let addrs: Vec<_> = nodes
+            .iter()
+            .filter(|(id, _)| id.ends_with("A"))
+            .map(|(id, _)| id.clone())
+            .collect();
+        println!("{:?} starting addrs end with A", addrs.len());
+
+        // Spawn a thread for each starting address
+        let mut channels = addrs
+            .iter()
+            .enumerate()
+            .map(|(idx, addr)| {
+                let (tx, rx) = sync_channel(1024);
+                let addr = addr.clone();
+                let directions = directions.clone();
+                let nodes = nodes.clone();
+                std::thread::spawn(move || spin(tx, addr, &directions, &nodes));
+                Path {
+                    idx,
+                    rx,
+                    steps: None,
+                }
+            })
+            .collect_vec();
+
+        let mut steps = 0usize;
+        loop {
+            for c in channels.iter_mut() {
+                if c.steps.is_none() || c.steps.unwrap() < steps {
+                    let s = c.rx.recv().unwrap();
+                    // println!("{}\t|\t{}: {}  - {}", steps, c.idx, addr, s);
+                    c.steps = Some(s);
+                    steps = steps.max(s);
+                }
+            }
+            if channels.iter().all(|c| c.steps == Some(steps)) {
+                return Ok(steps.to_string());
+            }
+        }
+    }
+}
+
+fn spin(
+    tx: SyncSender<usize>,
+    mut addr: String,
+    directions: &[Direction],
+    nodes: &HashMap<String, Node>,
+) {
+    let mut steps = 0usize;
+    loop {
+        for d in directions {
+            match d {
+                Direction::Left => addr = nodes[&addr].left.clone(),
+                Direction::Right => addr = nodes[&addr].right.clone(),
+            }
+            steps += 1;
+            if addr.ends_with("Z") {
+                if tx.send(steps).is_err() {
+                    return;
+                }
+            }
+        }
     }
 }
 

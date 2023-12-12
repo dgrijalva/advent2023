@@ -18,8 +18,14 @@ impl Puzzle for Day09 {
         Ok(result.to_string())
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let input = parse_input(input);
+        let result = input
+            .into_iter()
+            .update(|line| line.reverse())
+            .map(|line| compute_next(line))
+            .sum::<i64>();
+        Ok(result.to_string())
     }
 }
 

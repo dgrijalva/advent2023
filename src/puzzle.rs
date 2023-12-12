@@ -3,10 +3,11 @@ macros::import_solutions!(); // Import the rest of the solution files
 
 use std::io::Read;
 
+use aoc_client::SubmissionOutcome;
 use clap::Parser;
 use macros::get_solution;
 
-use crate::RootOpt;
+use crate::{client::Client, RootOpt};
 
 pub type PuzzleResult = Result<String, anyhow::Error>;
 
@@ -28,7 +29,7 @@ pub trait Puzzle {
 pub struct PuzzleCommand {
     /// Submit the result and update the data files
     #[arg(long)]
-    commit: bool,
+    submit: bool,
 }
 
 impl PuzzleCommand {
@@ -50,6 +51,19 @@ impl PuzzleCommand {
         };
 
         println!("Solution: {}", solution);
+
+        if self.submit {
+            let client = Client::new(opt)?;
+            let res = client.client.submit_answer(opt.part as i64, solution)?;
+            println!("{:?}", res);
+
+            if matches!(res, SubmissionOutcome::Correct) && opt.part == 1 {
+                println!("Downloading puzzle update");
+                client.clear()?;
+                client.download()?;
+            }
+        }
+
         Ok(())
     }
 }

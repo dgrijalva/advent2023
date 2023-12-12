@@ -57,7 +57,7 @@ impl PuzzleCommand {
             let res = client.client.submit_answer(opt.part as i64, solution)?;
             println!("{:?}", res);
 
-            if matches!(res, SubmissionOutcome::Correct) && opt.part == 1 {
+            if matches!(res, SubmissionOutcome::Correct) {
                 println!("Downloading puzzle update");
                 client.clear()?;
                 client.download()?;

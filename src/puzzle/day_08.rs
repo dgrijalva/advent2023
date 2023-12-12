@@ -2,7 +2,6 @@ use super::Puzzle;
 use itertools::Itertools;
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 
 pub struct Day08;
 
@@ -20,9 +19,10 @@ struct Node {
 }
 
 struct Path {
+    #[allow(dead_code)] // for logging
     idx: usize,
-    rx: Receiver<usize>,
-    steps: Option<usize>,
+    period: usize,
+    steps: usize,
 }
 
 impl Puzzle for Day08 {
@@ -61,46 +61,47 @@ impl Puzzle for Day08 {
         println!("{:?} starting addrs end with A", addrs.len());
 
         // Spawn a thread for each starting address
-        let mut channels = addrs
+        let mut paths = addrs
             .iter()
             .enumerate()
             .map(|(idx, addr)| {
-                let (tx, rx) = sync_channel(1024);
-                let addr = addr.clone();
-                let directions = directions.clone();
-                let nodes = nodes.clone();
-                std::thread::spawn(move || spin(tx, addr, &directions, &nodes));
+                let period = compute_period(addr.clone(), &directions, &nodes);
                 Path {
                     idx,
-                    rx,
-                    steps: None,
+                    period,
+                    steps: 0,
                 }
             })
             .collect_vec();
 
-        let mut steps = 0usize;
+        let mut steps = 2usize;
         loop {
-            for c in channels.iter_mut() {
-                if c.steps.is_none() || c.steps.unwrap() < steps {
-                    let s = c.rx.recv().unwrap();
-                    // println!("{}\t|\t{}: {}  - {}", steps, c.idx, addr, s);
-                    c.steps = Some(s);
+            for c in paths.iter_mut() {
+                if c.steps < steps {
+                    let s = c.next();
+                    // println!("{}\t|\t{} - {}", steps, c.idx, s);
                     steps = steps.max(s);
                 }
             }
-            if channels.iter().all(|c| c.steps == Some(steps)) {
+            if paths.iter().all(|c| c.steps == steps) {
                 return Ok(steps.to_string());
             }
         }
     }
 }
 
-fn spin(
-    tx: SyncSender<usize>,
+impl Path {
+    fn next(&mut self) -> usize {
+        self.steps = self.steps + self.period;
+        self.steps
+    }
+}
+
+fn compute_period(
     mut addr: String,
     directions: &[Direction],
     nodes: &HashMap<String, Node>,
-) {
+) -> usize {
     let mut steps = 0usize;
     loop {
         for d in directions {
@@ -110,9 +111,7 @@ fn spin(
             }
             steps += 1;
             if addr.ends_with("Z") {
-                if tx.send(steps).is_err() {
-                    return;
-                }
+                return steps;
             }
         }
     }

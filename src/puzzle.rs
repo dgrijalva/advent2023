@@ -16,13 +16,8 @@ pub trait Puzzle {
     where
         Self: Sized;
 
-    fn part_one(&self, _input: &str) -> PuzzleResult {
-        todo!("Implement part one");
-    }
-
-    fn part_two(&self, _input: &str) -> PuzzleResult {
-        todo!("Implement part two");
-    }
+    fn part_one(&self, _input: &str) -> PuzzleResult;
+    fn part_two(&self, _input: &str) -> PuzzleResult;
 }
 
 #[derive(Clone, Debug, Parser, Default)]

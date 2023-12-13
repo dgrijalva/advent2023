@@ -155,6 +155,19 @@ To determine whether it's even worth taking the time to search for such a nest, 
 
 ```
 
+```
+..........
+.S------7.
+.|F----7|.
+.||....||.
+.||....||.
+.|L-7F-J|.
+.|..||..|.
+.L--JL--J.
+..........
+
+```
+
 The above loop encloses merely *four tiles* - the two pairs of `.` in the southwest and southeast (marked `I` below). The middle `.` tiles (marked `O` below) are *not* in the loop. Here is the same loop again with those regions marked:
 
 ```

@@ -71,13 +71,24 @@ impl Puzzle for Day10 {
 fn find_enclosed(path: &[Coord], bounds: (usize, usize)) -> HashSet<Coord> {
     let mut enclosed = HashSet::new();
     let mut prev = path[0];
-    for &current in path[1..].iter() {
+    for (i, &current) in path[1..].iter().enumerate() {
         let heading = Direction::heading(prev, current);
         if let Some(right) = current.step(heading.turn_right()) {
             // println!("{:?} -> {:?} {:?}", prev, current, heading);
             if !path.contains(&right) {
                 // enclosed.insert(right);
                 flood_fill(right, &mut enclosed, &path, bounds)
+            }
+        }
+        // We need to check both sides of a corner before moving on
+        if let Some(next) = path.get(i + 2) {
+            let heading = Direction::heading(current, *next);
+            if let Some(right) = current.step(heading.turn_right()) {
+                // println!("{:?} -> {:?} {:?}", prev, current, heading);
+                if !path.contains(&right) {
+                    // enclosed.insert(right);
+                    flood_fill(right, &mut enclosed, &path, bounds)
+                }
             }
         }
         prev = current;
@@ -247,7 +258,7 @@ impl Direction {
         } else if from.1 < to.1 {
             return Direction::South;
         } else {
-            panic!("no direction");
+            panic!("no direction {from:?} {to:?}");
         }
     }
 }
@@ -267,12 +278,14 @@ fn print_grid(grid: &[Vec<Piece>], path: &[Coord], enclosed: &[Coord]) {
                     if enclosed.contains(&coord) && path.contains(&coord) {
                         p = p.on_red();
                     } else if path.contains(&coord) {
-                        p = p.green();
+                        p = p.blue();
                         if path[0..2].contains(&coord) {
                             p = p.on_white();
                         }
                     } else if enclosed.contains(&coord) {
-                        p = p.on_green();
+                        p = ".".on_green();
+                    } else {
+                        p = ".".normal();
                     }
 
                     p

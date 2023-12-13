@@ -54,7 +54,7 @@ impl Puzzle for Day10 {
 
         let mut enclosed = find_enclosed(&path, bounds);
         if enclosed.iter().any(|c| c.0 == 0 || c.1 == 0) {
-            // we need to iterate clockwise around the path for this to work
+            // we need to walk clockwise around the path for this to work.
             // i don't know how to determine that, so we'll just use the version
             // which doesn't select cells on the border
             path[1..].reverse();
@@ -289,10 +289,10 @@ impl std::fmt::Display for Piece {
             Self::Start => "S",
             Self::Vertical => "|",
             Self::Horizontal => "-",
-            Self::NorthEast => "L",
-            Self::NorthWest => "J",
-            Self::SouthEast => "F",
-            Self::SouthWest => "7",
+            Self::NorthEast => "┖",
+            Self::NorthWest => "┛",
+            Self::SouthEast => "┍",
+            Self::SouthWest => "┑",
         })
     }
 }

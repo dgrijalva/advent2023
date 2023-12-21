@@ -48,9 +48,11 @@ impl Sequence {
     fn unfold(&self) -> Self {
         let mut states = vec![];
         let mut runs = vec![];
-        for _ in 0..5 {
+        for i in 0..5 {
             states.extend(self.states.iter().copied());
-            states.push(State::Unknown);
+            if i < 4 {
+                states.push(State::Unknown);
+            }
             runs.extend(self.runs.iter().copied());
         }
 
@@ -70,6 +72,16 @@ impl Sequence {
             .map(|(i, _)| i)
         else {
             if self.valid(states) {
+                // double check
+                // if self.runs != Self::run_lengths(states) {
+                //     panic!(
+                //         "Invalid state: {:?} | {:?} != {:?}",
+                //         states,
+                //         Self::run_lengths(states),
+                //         self.runs
+                //     );
+                // }
+
                 // println!("Valid {:?} {:?}", states, self.runs);
                 return 1;
             } else {
@@ -131,6 +143,31 @@ impl Sequence {
             return false;
         }
         true
+    }
+
+    /// An alternate approach to validation, used to double-check my work but no longer needed
+    #[allow(unused)]
+    fn run_lengths(states: &[State]) -> Vec<usize> {
+        let mut lengths = vec![];
+        let mut run_len = 0usize;
+        for s in states {
+            match s {
+                State::Unknown => unreachable!("only use this on complete states"),
+                State::Damaged => {
+                    run_len += 1;
+                }
+                State::Operational => {
+                    if run_len > 0 {
+                        lengths.push(run_len);
+                    }
+                    run_len = 0;
+                }
+            }
+        }
+        if run_len > 0 {
+            lengths.push(run_len);
+        }
+        lengths
     }
 }
 

@@ -26,26 +26,37 @@ impl Puzzle for Day12 {
 
     fn part_one(&self, input: &str) -> super::PuzzleResult {
         let data = parse_input(input);
-
-        let result = data
-            // .into_par_iter()
-            .into_iter()
-            // .map(|s| (s.arrangements(), s))
-            // .inspect(|v| {
-            //     dbg!(v);
-            // })
-            // .map(|(c, _)| c)
-            .map(|s| s.arrangements())
-            .sum::<usize>();
+        let result = data.into_iter().map(|s| s.arrangements()).sum::<usize>();
         Ok(result.to_string())
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let data = parse_input(input)
+            .into_iter()
+            .map(|s| s.unfold())
+            .collect_vec();
+
+        let result = data
+            .into_par_iter()
+            .map(|s| dbg!(s.arrangements()))
+            .sum::<usize>();
+        Ok(result.to_string())
     }
 }
 
 impl Sequence {
+    fn unfold(&self) -> Self {
+        let mut states = vec![];
+        let mut runs = vec![];
+        for _ in 0..5 {
+            states.extend(self.states.iter().copied());
+            states.push(State::Unknown);
+            runs.extend(self.runs.iter().copied());
+        }
+
+        Self { states, runs }
+    }
+
     fn arrangements(&self) -> usize {
         self.possible_arrangements(&self.states)
     }
@@ -66,16 +77,17 @@ impl Sequence {
             }
         };
 
+        // recursive depth first search
+        let mut sum = 0usize;
         let mut data = states.to_vec();
-        data[idx] = State::Operational;
-        let left = self.possible_arrangements(&data);
-        data[idx] = State::Damaged;
-        let right = self.possible_arrangements(&data);
-        left + right
-    }
-
-    fn complete(states: &[State]) -> bool {
-        return !states.iter().any(|s| *s == State::Unknown);
+        for s in [State::Damaged, State::Operational] {
+            data[idx] = s;
+            // short circuit if already invalid
+            if self.valid(&data) {
+                sum += self.possible_arrangements(&data);
+            }
+        }
+        sum
     }
 
     fn valid(&self, states: &[State]) -> bool {
@@ -119,40 +131,6 @@ impl Sequence {
             return false;
         }
         true
-    }
-
-    fn segments(&self) -> Vec<Vec<State>> {
-        let mut segments = vec![];
-        let mut current_segment = vec![];
-        for state in self.states.iter().cloned() {
-            match state {
-                State::Damaged | State::Unknown => {
-                    if current_segment.is_empty()
-                        || !current_segment.iter().any(|s| *s == State::Operational)
-                    {
-                        current_segment.push(state);
-                    } else {
-                        segments.push(current_segment);
-                        current_segment = vec![state];
-                    }
-                }
-                State::Operational => {
-                    if current_segment.is_empty()
-                        || current_segment.iter().all(|s| *s == State::Operational)
-                    {
-                        current_segment.push(state);
-                    } else {
-                        segments.push(current_segment);
-                        current_segment = vec![state];
-                    }
-                }
-            }
-        }
-        if !current_segment.is_empty() {
-            segments.push(current_segment);
-        }
-
-        segments
     }
 }
 

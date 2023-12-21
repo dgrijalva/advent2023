@@ -60,10 +60,11 @@ impl Sequence {
     }
 
     fn arrangements(&self) -> usize {
-        self.possible_arrangements(&self.states)
+        // println!("start {:?} {:?}", &self.states, &self.runs);
+        Self::possible_arrangements(&self.states, &self.runs)
     }
 
-    fn possible_arrangements(&self, states: &[State]) -> usize {
+    fn possible_arrangements(states: &[State], runs: &[usize]) -> usize {
         // find index of first unknown state
         let Some(idx) = states
             .iter()
@@ -71,18 +72,8 @@ impl Sequence {
             .find(|(_, &s)| s == State::Unknown)
             .map(|(i, _)| i)
         else {
-            if self.valid(states) {
-                // double check
-                // if self.runs != Self::run_lengths(states) {
-                //     panic!(
-                //         "Invalid state: {:?} | {:?} != {:?}",
-                //         states,
-                //         Self::run_lengths(states),
-                //         self.runs
-                //     );
-                // }
-
-                // println!("Valid {:?} {:?}", states, self.runs);
+            if Self::valid_for(states, runs).is_some() {
+                // println!("Valid {:?} {:?}", states, runs);
                 return 1;
             } else {
                 return 0;
@@ -95,11 +86,64 @@ impl Sequence {
         for s in [State::Damaged, State::Operational] {
             data[idx] = s;
             // short circuit if already invalid
-            if self.valid(&data) {
-                sum += self.possible_arrangements(&data);
+            if let Some((data_len, runs_len)) = Self::valid_for(&data, &runs) {
+                // println!("{} {}", data_len, runs_len);
+                // println!("Checking {:?} {:?}", &data[data_len..], &runs[runs_len..]);
+                sum += Self::possible_arrangements(&data[data_len..], &runs[runs_len..]);
             }
         }
         sum
+    }
+
+    /// Checks that the sequence is valid and returns the number of complete
+    /// entities that can be consumed for each input (so we don't have to keep checking them)
+    fn valid_for(states: &[State], runs: &[usize]) -> Option<(usize, usize)> {
+        let mut run_iter = runs.iter();
+        let mut in_run = None;
+        let mut run_len = 0usize;
+        let mut consumed_runs = 0usize;
+        let mut consumed_states = 0usize;
+        for (idx, state) in states.iter().copied().enumerate() {
+            match state {
+                State::Unknown => return Some((consumed_states, consumed_runs)),
+                State::Operational => {
+                    // end run, if there is one
+                    if let Some(&run) = in_run {
+                        // make sure run was expected len
+                        if run_len != run {
+                            return None;
+                        }
+                        consumed_runs += 1;
+                    }
+                    in_run = None;
+                    run_len = 0;
+                    consumed_states = idx;
+                }
+                State::Damaged => {
+                    if in_run.is_none() {
+                        in_run = run_iter.next();
+                        // no more runs
+                        if in_run.is_none() {
+                            return None;
+                        }
+                    }
+                    run_len += 1;
+                }
+            }
+        }
+        // catch the last run if it goes to the end
+        if let Some(&run) = in_run {
+            // make sure run was expected len
+            if run_len != run {
+                return None;
+            }
+            consumed_runs += 1;
+            consumed_states = states.len();
+        }
+        if run_iter.next().is_some() {
+            return None;
+        }
+        return Some((consumed_states, consumed_runs));
     }
 
     fn valid(&self, states: &[State]) -> bool {

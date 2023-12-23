@@ -29,7 +29,7 @@ impl Puzzle for Day12 {
         let result = data
             .into_iter()
             .map(|s| s.arrangements())
-            .inspect(|v| println!("{v}"))
+            // .inspect(|v| println!("{v}"))
             .sum::<usize>();
         Ok(result.to_string())
     }
@@ -42,7 +42,8 @@ impl Puzzle for Day12 {
 
         let result = data
             .into_par_iter()
-            .map(|s| dbg!(s.arrangements()))
+            .map(|s| s.arrangements())
+            // .inspect(|v| println!("{v}"))
             .sum::<usize>();
         Ok(result.to_string())
     }
@@ -104,14 +105,15 @@ impl Sequence {
         }
         // Try the next state as # by trying to consume the expected run length
         if [State::Unknown, State::Damaged].contains(&states[0]) {
+            // next run length
             let next = runs[0];
-            if states.len() >= next // There are enough states left
-                && !states[..next].contains(&State::Operational)
-            {
-                // the run isn't too long
+            // There are enough states left && at least next states can be in the run
+            if states.len() >= next && !states[..next].contains(&State::Operational) {
                 if states.len() == next {
+                    // run is the same length as next
                     sum += Self::possible_arrangements(memo, &states[(next)..], &runs[1..]);
                 } else if states[next] != State::Damaged {
+                    // run is no longer than next
                     sum += Self::possible_arrangements(memo, &states[(next + 1)..], &runs[1..]);
                 }
             }

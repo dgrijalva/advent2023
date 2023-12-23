@@ -107,13 +107,13 @@ impl Sequence {
         if [State::Unknown, State::Damaged].contains(&states[0]) {
             // next run length
             let next = runs[0];
-            // There are enough states left && at least next states can be in the run
+            // There are enough states left && at least `next` states can be in the run
             if states.len() >= next && !states[..next].contains(&State::Operational) {
                 if states.len() == next {
-                    // run is the same length as next
-                    sum += Self::possible_arrangements(memo, &states[(next)..], &runs[1..]);
+                    // run is the same length as `next`
+                    sum += Self::possible_arrangements(memo, &states[next..], &runs[1..]);
                 } else if states[next] != State::Damaged {
-                    // run is no longer than next
+                    // run is no longer than `next`
                     sum += Self::possible_arrangements(memo, &states[(next + 1)..], &runs[1..]);
                 }
             }

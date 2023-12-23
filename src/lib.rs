@@ -1,6 +1,8 @@
 mod client;
+mod pos;
 mod puzzle;
 
+pub use pos::Pos;
 pub use puzzle::Puzzle;
 
 use clap::Parser;

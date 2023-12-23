@@ -27,12 +27,8 @@ impl Puzzle for Day13 {
             .map(|grid| {
                 // +1 because we count the left side of the match
                 let mut val = 0usize;
-                if let Some(hi) = grid.horiz_reflection() {
-                    val += (hi + 1) * 100;
-                }
-                if let Some(vi) = grid.vert_reflection() {
-                    val += vi + 1;
-                }
+                val += grid.perfect_reflection(grid.horiz()) * 100;
+                val += grid.perfect_reflection(grid.vert());
                 val
             })
             .inspect(|v| println!("{v}"))
@@ -62,30 +58,71 @@ impl Grid {
         }
     }
 
+    fn horiz(&self) -> (impl Fn(&Grid, usize) -> Vec<Location>, usize) {
+        (Self::row, self.size().y)
+    }
+
+    fn vert(&self) -> (impl Fn(&Grid, usize) -> Vec<Location>, usize) {
+        (Self::col, self.size().x)
+    }
+
     /// Returns the index of the top line of a reflection
-    fn horiz_reflection(&self) -> Option<usize> {
-        let candidate = self.find_reflection(Self::row, self.size().y)?;
-        self.validate_reflection(Self::row, self.size().y, candidate)
-        // Some(candidate)
+    fn perfect_reflection(
+        &self,
+        direction: (impl Fn(&Grid, usize) -> Vec<Location>, usize),
+    ) -> usize {
+        self.find_reflections(&direction.0, direction.1)
+            .iter()
+            .find_map(|r| self.validate_reflection(&direction.0, direction.1, *r))
+            .map(|v| v + 1)
+            .unwrap_or(0)
     }
 
-    fn vert_reflection(&self) -> Option<usize> {
-        let candidate = self.find_reflection(Self::col, self.size().x)?;
-        self.validate_reflection(Self::col, self.size().x, candidate)
-        // Some(candidate)
-    }
-
-    fn find_reflection(
+    fn find_reflections(
         &self,
         lookup: impl Fn(&Grid, usize) -> Vec<Location>,
         len: usize,
-    ) -> Option<usize> {
+    ) -> Vec<usize> {
+        let mut reflections = vec![];
         for i in 0..(len - 1) {
             if lookup(self, i) == lookup(self, i + 1) {
-                return Some(i);
+                reflections.push(i);
             }
         }
-        None
+        reflections
+    }
+
+    /// Returns the number of valid lines of reflection
+    fn reflection_len(
+        &self,
+        lookup: impl Fn(&Grid, usize) -> Vec<Location>,
+        len: usize,
+        idx: usize,
+    ) -> usize {
+        if idx == 0 {
+            return 1;
+        }
+
+        let mut count = 1;
+        let mut left = idx - 1;
+        let mut right = idx + 2;
+
+        while right < len {
+            if lookup(self, left) != lookup(self, right) {
+                return count;
+            }
+
+            count += 1;
+
+            if left > 0 {
+                left -= 1;
+                right += 1;
+            } else {
+                break;
+            }
+        }
+
+        return count;
     }
 
     fn validate_reflection(

@@ -42,12 +42,24 @@ impl Puzzle for Day14 {
     fn part_two(&self, input: &str) -> super::PuzzleResult {
         let input = parse_input(input);
         let mut grid = &input;
-        let mut memo: HashMap<Grid, Grid> = Default::default();
-        for _ in 0..1000000000 {
-            // for _ in 0..1000000 {
-            if let Some(next) = memo.get(grid) {
-                grid = next;
-                continue;
+        let mut memo: HashMap<Grid, (Grid, usize)> = Default::default();
+        let mut i = 0usize;
+        let mut found_cycle = false;
+        let iterations = 1000000000usize;
+        while i < iterations {
+            if !found_cycle {
+                if let Some((next, seen)) = memo.get(grid) {
+                    // once we see a cycle, we can skip all iterations of it
+                    // println!("Found cycle at: {i} (seen: {seen})");
+                    let cycle_len = i - *seen;
+                    let remaining = (iterations - i) % cycle_len;
+                    i = iterations - remaining + 1;
+                    // println!("Jumping to {i}");
+
+                    found_cycle = true;
+                    grid = next;
+                    continue;
+                }
             }
 
             let prev = grid.clone();
@@ -56,8 +68,10 @@ impl Puzzle for Day14 {
             next.tilt(Direction::West);
             next.tilt(Direction::South);
             next.tilt(Direction::East);
-            memo.insert(prev.clone(), next);
-            grid = memo.get(&prev).unwrap();
+            memo.insert(prev.clone(), (next, i));
+
+            grid = &memo.get(&prev).unwrap().0;
+            i += 1;
         }
         Ok(grid.total_load().to_string())
     }

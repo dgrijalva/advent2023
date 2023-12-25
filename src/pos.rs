@@ -5,6 +5,8 @@ pub struct Pos {
 }
 
 impl Pos {
+    pub const ZERO: Pos = Pos { x: 0, y: 0 };
+
     pub fn size_of<T>(data: &Vec<Vec<T>>) -> Self {
         Pos {
             y: data.len(),

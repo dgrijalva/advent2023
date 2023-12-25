@@ -1,4 +1,7 @@
-use std::str::FromStr;
+use std::{
+    collections::{HashMap, VecDeque},
+    str::FromStr,
+};
 
 use itertools::Itertools;
 
@@ -7,9 +10,10 @@ use crate::Pos;
 
 pub struct Day14;
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct Grid(Vec<Vec<Position>>);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Position {
     Empty,
     Cube,
@@ -36,29 +40,30 @@ impl Puzzle for Day14 {
     }
 
     fn part_two(&self, input: &str) -> super::PuzzleResult {
-        let mut grid = parse_input(input);
-        // for _ in 0..1000000000 {
-        for _ in 0..1000000 {
-            grid.tilt(Direction::North);
-            grid.tilt(Direction::West);
-            grid.tilt(Direction::South);
-            grid.tilt(Direction::East);
+        let input = parse_input(input);
+        let mut grid = &input;
+        let mut memo: HashMap<Grid, Grid> = Default::default();
+        for _ in 0..1000000000 {
+            // for _ in 0..1000000 {
+            if let Some(next) = memo.get(grid) {
+                grid = next;
+                continue;
+            }
+
+            let prev = grid.clone();
+            let mut next = grid.clone();
+            next.tilt(Direction::North);
+            next.tilt(Direction::West);
+            next.tilt(Direction::South);
+            next.tilt(Direction::East);
+            memo.insert(prev.clone(), next);
+            grid = memo.get(&prev).unwrap();
         }
         Ok(grid.total_load().to_string())
     }
 }
 
 impl Grid {
-    /// Shift in a direction until the pieces stop moving
-    fn tilt(&mut self, direction: Direction) {
-        loop {
-            let move_count = self.shift(direction);
-            if move_count == 0 {
-                break;
-            }
-        }
-    }
-
     fn total_load(&self) -> usize {
         let size = self.size();
         let mut load = 0usize;
@@ -79,111 +84,62 @@ impl Grid {
         Pos::size_of(&self.0)
     }
 
-    fn swap(&mut self, pos: Pos, direction: Direction) -> bool {
-        // println!("swap {pos:?} {direction:?}");
-        let Some(swap_pos) = self.swap_pos(pos, direction) else {
-            return false;
-        };
-        // println!("swap_pos {swap_pos:?}");
-        let item = self.0[pos.y][pos.x];
-        let swap = self.0[swap_pos.y][swap_pos.x];
-        if item == Position::Sphere && swap == Position::Empty {
-            self.0[pos.y][pos.x] = swap;
-            self.0[swap_pos.y][swap_pos.x] = item;
-            return true;
+    #[inline]
+    fn swap(&mut self, pos: Pos, open: &mut VecDeque<Pos>) {
+        let x = pos.x;
+        let y = pos.y;
+        let data = self.0[y][x];
+        match data {
+            Position::Empty => open.push_back(pos),
+            Position::Cube => open.clear(),
+            Position::Sphere => {
+                if let Some(op) = open.pop_front() {
+                    self.0[y][x] = Position::Empty;
+                    self.0[op.y][op.x] = Position::Sphere;
+                    open.push_back(pos);
+                }
+            }
         }
-        false
     }
 
     /// Shift all movable objects one unit in the specified direction
     /// Returns the number of objects that moved
-    fn shift(&mut self, direction: Direction) -> usize {
+    fn tilt(&mut self, direction: Direction) {
         let size = self.size();
-        let mut move_count = 0usize;
-
-        // let (x_iter, y_iter) = match direction {
-        //     Direction::North => ((0..size.x).collect_vec(), (0..size.y).collect_vec()),
-        //     Direction::East => ((0..size.x).rev().collect_vec(), (0..size.y).collect_vec()),
-        //     Direction::South => ((0..size.x).collect_vec(), (0..size.y).rev().collect_vec()),
-        //     Direction::West => ((0..size.x).collect_vec(), (0..size.y).collect_vec()),
-        // };
+        let mut open_pos: VecDeque<Pos> = VecDeque::with_capacity(32);
 
         match direction {
             Direction::North => {
-                for y in 1..size.y {
-                    for x in 0..size.x {
-                        // println!("{x} {y}");
-                        if self.swap((x, y).into(), direction) {
-                            move_count += 1;
-                        }
+                for x in 0..size.x {
+                    open_pos.clear();
+                    for y in 0..size.y {
+                        self.swap((x, y).into(), &mut open_pos);
                     }
                 }
             }
             Direction::South => {
-                for y in (0..(size.y - 1)).rev() {
+                for x in 0..size.x {
+                    open_pos.clear();
+                    for y in (0..size.y).rev() {
+                        self.swap((x, y).into(), &mut open_pos);
+                    }
+                }
+            }
+            Direction::West => {
+                for y in 0..size.y {
+                    open_pos.clear();
                     for x in 0..size.x {
-                        if self.swap((x, y).into(), direction) {
-                            move_count += 1;
-                        }
-                    }
-                }
-            }
-            Direction::West => {
-                for x in 1..size.x {
-                    for y in 0..size.y {
-                        if self.swap((x, y).into(), direction) {
-                            move_count += 1;
-                        }
+                        self.swap((x, y).into(), &mut open_pos);
                     }
                 }
             }
             Direction::East => {
-                for x in (0..(size.x - 1)).rev() {
-                    for y in 0..size.y {
-                        if self.swap((x, y).into(), direction) {
-                            move_count += 1;
-                        }
+                for y in 0..size.y {
+                    open_pos.clear();
+                    for x in (0..size.x).rev() {
+                        self.swap((x, y).into(), &mut open_pos);
                     }
                 }
-            }
-        }
-
-        move_count
-    }
-
-    fn swap_pos(&self, pos: Pos, direction: Direction) -> Option<Pos> {
-        match direction {
-            Direction::North => {
-                if pos.y == 0 {
-                    return None;
-                }
-                Some(Pos {
-                    x: pos.x,
-                    y: pos.y - 1,
-                })
-            }
-            Direction::South => {
-                let new_y = pos.y + 1;
-                if new_y >= self.size().y {
-                    return None;
-                }
-                Some(Pos { x: pos.x, y: new_y })
-            }
-            Direction::West => {
-                if pos.x == 0 {
-                    return None;
-                }
-                Some(Pos {
-                    x: pos.x - 1,
-                    y: pos.y,
-                })
-            }
-            Direction::East => {
-                let new_x = pos.x + 1;
-                if new_x >= self.size().x {
-                    return None;
-                }
-                Some(Pos { x: new_x, y: pos.y })
             }
         }
     }
@@ -198,6 +154,7 @@ fn parse_input(input: &str) -> Grid {
                 .collect_vec()
         })
         .collect_vec();
+
     Grid(data)
 }
 

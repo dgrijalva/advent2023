@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use super::Puzzle;
 use crate::{Direction, Grid, Pos};
 use std::{collections::HashSet, str::FromStr};
@@ -15,7 +13,7 @@ enum Tile {
     VertSplit,
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Copy)]
 struct Ray {
     pos: Pos,
     facing: Direction,
@@ -28,7 +26,7 @@ impl Puzzle for Day16 {
 
     fn part_one(&self, input: &str) -> super::PuzzleResult {
         let input: Grid<Tile> = input.parse().unwrap();
-        input.debug_print(|pos, tile| format!("{:?}", tile));
+        input.debug_print(|_pos, tile| format!("{:?}", tile));
 
         let size = input.size();
         let mut rays = vec![Ray::start()];
@@ -37,17 +35,17 @@ impl Puzzle for Day16 {
 
         // Walk each ray, one at a time
         while let Some(mut ray) = rays.pop() {
-            println!("Following: {ray:?}");
+            log::debug!("Following: {ray:?}");
             let start = ray.pos;
-            let mut dbg_visited: Grid<bool> = Grid::new(size.x, size.y, false);
+            let mut loop_detection = HashSet::new();
+            loop_detection.insert(ray);
 
             visited.set(&ray.pos, true);
-            dbg_visited.set(&ray.pos, true);
             loop {
                 let (done, new_ray) = ray.step(&input);
                 if let Some(r) = new_ray {
                     if !seen_rays.contains(&r) {
-                        println!("New ray {r:?}");
+                        log::debug!("New ray {r:?}");
                         rays.push(r.clone());
                         seen_rays.insert(r);
                     }
@@ -56,11 +54,14 @@ impl Puzzle for Day16 {
                     break;
                 } else {
                     visited.set(&ray.pos, true);
-                    dbg_visited.set(&ray.pos, true);
+                    if loop_detection.contains(&ray) {
+                        break;
+                    }
+                    loop_detection.insert(ray);
                 }
             }
             print_grid(&visited, Some(start));
-            println!("");
+            log::debug!("");
         }
 
         print_grid(&visited, None);
@@ -92,47 +93,47 @@ impl Ray {
             Tile::Empty => self.step_unchecked(grid, None),
             Tile::NWMirror => {
                 // "/"
-                println!("[/] {:?} {:?}", self.pos, self.facing);
+                log::debug!("[/] {:?} {:?}", self.pos, self.facing);
                 match self.facing {
                     Direction::North => self.facing = Direction::East,
                     Direction::East => self.facing = Direction::North,
                     Direction::South => self.facing = Direction::West,
                     Direction::West => self.facing = Direction::South,
                 };
-                println!("{:?}", self.facing);
+                log::debug!("{:?}", self.facing);
                 self.step_unchecked(grid, None)
             }
             Tile::NEMirror => {
                 // "\"
-                println!("[\\] {:?} {:?}", self.pos, self.facing);
+                log::debug!("[\\] {:?} {:?}", self.pos, self.facing);
                 match self.facing {
                     Direction::North => self.facing = Direction::West,
                     Direction::East => self.facing = Direction::South,
                     Direction::South => self.facing = Direction::East,
                     Direction::West => self.facing = Direction::North,
                 };
-                println!("{:?}", self.facing);
+                log::debug!("{:?}", self.facing);
                 self.step_unchecked(grid, None)
             }
             Tile::HorizSplit => match self.facing {
                 Direction::East | Direction::West => self.step_unchecked(grid, None),
                 Direction::North | Direction::South => {
-                    println!("[-] {:?} {:?}", self.pos, self.facing);
+                    log::debug!("[-] {:?} {:?}", self.pos, self.facing);
                     let mut other = self.clone();
                     other.facing = Direction::East;
                     self.facing = Direction::West;
-                    println!("{:?}", self.facing);
+                    log::debug!("{:?}", self.facing);
                     self.step_unchecked(grid, Some(other))
                 }
             },
             Tile::VertSplit => match self.facing {
                 Direction::North | Direction::South => self.step_unchecked(grid, None),
                 Direction::East | Direction::West => {
-                    println!("[|] {:?} {:?}", self.pos, self.facing);
+                    log::debug!("[|] {:?} {:?}", self.pos, self.facing);
                     let mut other = self.clone();
                     other.facing = Direction::South;
                     self.facing = Direction::North;
-                    println!("{:?}", self.facing);
+                    log::debug!("{:?}", self.facing);
                     self.step_unchecked(grid, Some(other))
                 }
             },
@@ -155,7 +156,7 @@ impl FromStr for Tile {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // println!("{s}");
+        // log::debug!("{s}");
         match s {
             "." => Ok(Self::Empty),
             "/" => Ok(Self::NWMirror),

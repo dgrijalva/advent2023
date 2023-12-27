@@ -1,4 +1,4 @@
-use crate::{direction, Direction, Pos};
+use crate::{Direction, Pos};
 use itertools::Itertools;
 use std::str::FromStr;
 

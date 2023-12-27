@@ -1,9 +1,15 @@
 mod client;
-mod pos;
 mod puzzle;
 
-pub use pos::Pos;
 pub use puzzle::Puzzle;
+
+mod direction;
+mod grid;
+mod pos;
+
+pub use direction::Direction;
+pub use grid::Grid;
+pub use pos::Pos;
 
 use clap::Parser;
 use client::DownloadCommand;

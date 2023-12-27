@@ -1,5 +1,6 @@
 use super::Puzzle;
 use crate::{Direction, Grid, Pos};
+use rayon::prelude::*;
 use std::{collections::HashSet, str::FromStr};
 
 pub struct Day16;
@@ -27,54 +28,90 @@ impl Puzzle for Day16 {
     fn part_one(&self, input: &str) -> super::PuzzleResult {
         let input: Grid<Tile> = input.parse().unwrap();
         input.debug_print(|_pos, tile| format!("{:?}", tile));
-
-        let size = input.size();
-        let mut rays = vec![Ray::start()];
-        let mut seen_rays = HashSet::new();
-        let mut visited: Grid<bool> = Grid::new(size.x, size.y, false);
-
-        // Walk each ray, one at a time
-        while let Some(mut ray) = rays.pop() {
-            log::debug!("Following: {ray:?}");
-            let start = ray.pos;
-            let mut loop_detection = HashSet::new();
-            loop_detection.insert(ray);
-
-            visited.set(&ray.pos, true);
-            loop {
-                let (done, new_ray) = ray.step(&input);
-                if let Some(r) = new_ray {
-                    if !seen_rays.contains(&r) {
-                        log::debug!("New ray {r:?}");
-                        rays.push(r.clone());
-                        seen_rays.insert(r);
-                    }
-                }
-                if done {
-                    break;
-                } else {
-                    visited.set(&ray.pos, true);
-                    if loop_detection.contains(&ray) {
-                        break;
-                    }
-                    loop_detection.insert(ray);
-                }
-            }
-            print_grid(&visited, Some(start));
-            log::debug!("");
-        }
-
-        print_grid(&visited, None);
-        let result = visited
-            .rows()
-            .map(|row| row.filter(|&&v| v).count())
-            .sum::<usize>();
+        let result = summarize_ray(Ray::start(), &input);
         Ok(result.to_string())
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        let input: Grid<Tile> = input.parse().unwrap();
+        let size = input.size();
+        let top = (0..size.x).map(|x| Pos { x, y: 0 }).map(|pos| Ray {
+            pos,
+            facing: Direction::South,
+        });
+        let bottom = (0..size.x)
+            .map(|x| Pos { x, y: size.y - 1 })
+            .map(|pos| Ray {
+                pos,
+                facing: Direction::North,
+            });
+        let left = (0..size.y).map(|y| Pos { x: 0, y }).map(|pos| Ray {
+            pos,
+            facing: Direction::East,
+        });
+        let right = (0..size.y)
+            .map(|y| Pos { x: size.x - 1, y })
+            .map(|pos| Ray {
+                pos,
+                facing: Direction::West,
+            });
+
+        let result = top
+            .chain(bottom)
+            .chain(left)
+            .chain(right)
+            .par_bridge()
+            .map(|ray| summarize_ray(ray, &input))
+            .max()
+            .unwrap();
+        return Ok(result.to_string());
     }
+}
+
+/// Apply a ray to the grid and return the number of cells it energizes
+/// (this is basically all of part 1)
+fn summarize_ray(ray: Ray, grid: &Grid<Tile>) -> usize {
+    let size = grid.size();
+    let mut rays = vec![ray];
+    let mut seen_rays = HashSet::new();
+    let mut visited: Grid<bool> = Grid::new(size.x, size.y, false);
+
+    // Walk each ray, one at a time
+    while let Some(mut ray) = rays.pop() {
+        log::debug!("Following: {ray:?}");
+        let start = ray.pos;
+        let mut loop_detection = HashSet::new();
+        loop_detection.insert(ray);
+
+        visited.set(&ray.pos, true);
+        loop {
+            let (done, new_ray) = ray.step(grid);
+            if let Some(r) = new_ray {
+                if !seen_rays.contains(&r) {
+                    log::debug!("New ray {r:?}");
+                    rays.push(r.clone());
+                    seen_rays.insert(r);
+                }
+            }
+            if done {
+                break;
+            } else {
+                visited.set(&ray.pos, true);
+                if loop_detection.contains(&ray) {
+                    break;
+                }
+                loop_detection.insert(ray);
+            }
+        }
+        print_grid(&visited, Some(start));
+        log::debug!("");
+    }
+
+    print_grid(&visited, None);
+    visited
+        .rows()
+        .map(|row| row.filter(|&&v| v).count())
+        .sum::<usize>()
 }
 
 impl Ray {

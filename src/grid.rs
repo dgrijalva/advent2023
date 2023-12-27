@@ -49,7 +49,7 @@ impl<T> Grid<T> {
                 .enumerate()
                 .map(|(x, t)| f(Pos::from((x, y)), &t))
                 .join("");
-            println!("{data}");
+            log::debug!("{data}");
         }
     }
 }

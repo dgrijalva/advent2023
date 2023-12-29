@@ -9,12 +9,25 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub fn all() -> [Self; 4] {
+        [Self::North, Self::East, Self::South, Self::West]
+    }
+
     pub fn turn_right(&self) -> Self {
         match self {
             Self::North => Self::East,
             Self::East => Self::South,
             Self::South => Self::West,
             Self::West => Self::North,
+        }
+    }
+
+    pub fn turn_left(&self) -> Self {
+        match self {
+            Self::North => Self::West,
+            Self::East => Self::North,
+            Self::South => Self::East,
+            Self::West => Self::South,
         }
     }
 

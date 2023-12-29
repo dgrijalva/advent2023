@@ -1,6 +1,6 @@
 use crate::{Direction, Pos};
 use itertools::Itertools;
-use std::str::FromStr;
+use std::{hash::Hash, str::FromStr};
 
 pub struct Grid<T>(Vec<Vec<T>>);
 
@@ -82,12 +82,47 @@ where
     }
 }
 
+impl<T> PartialEq for Grid<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl<T> Eq for Grid<T> where T: Eq {}
+
+impl<T> Hash for Grid<T>
+where
+    T: Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state)
+    }
+}
+
 impl<T> Clone for Grid<T>
 where
     T: Clone,
 {
     fn clone(&self) -> Self {
         Self(self.0.clone())
+    }
+}
+
+impl<T> std::fmt::Debug for Grid<T>
+where
+    T: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (y, row) in self.rows().enumerate() {
+            for v in row {
+                std::fmt::Debug::fmt(v, f)?;
+            }
+            f.write_str("\n")?;
+        }
+        Ok(())
     }
 }
 

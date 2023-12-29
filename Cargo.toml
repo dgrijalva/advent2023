@@ -16,3 +16,4 @@ macros = { path = "macros" }
 itertools = "0.12.0"
 rayon = "1.8.0"
 colored = "2.1.0"
+pathfinding = "4.8.0"

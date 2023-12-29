@@ -12,6 +12,13 @@ struct Path<'a> {
     run_len: u8,
     grid: &'a Grid<u8>,
     goal: Pos,
+    crucible: Crucible,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+enum Crucible {
+    Normal,
+    Ultra,
 }
 
 impl Puzzle for Day17 {
@@ -20,33 +27,38 @@ impl Puzzle for Day17 {
     }
 
     fn part_one(&self, input: &str) -> super::PuzzleResult {
-        let input: Grid<u8> = input.parse().unwrap();
-        let size = input.size();
-        let start = Pos::ZERO;
-        let end = Pos::from((size.x - 1, size.y - 1));
-
-        let path = Path {
-            pos: start,
-            heading: Direction::East,
-            run_len: 0,
-            grid: &input,
-            goal: end,
-        };
-        let Some((_, result)) = pathfinding::directed::astar::astar(
-            &path,
-            Path::astar_succ,
-            Path::guess_cost_to_end,
-            Path::is_complete,
-        ) else {
-            anyhow::bail!("no path found");
-        };
-
-        Ok(result.to_string())
+        solve_puzzle(input, Crucible::Normal)
     }
 
-    fn part_two(&self, _input: &str) -> super::PuzzleResult {
-        todo!("implement part two")
+    fn part_two(&self, input: &str) -> super::PuzzleResult {
+        solve_puzzle(input, Crucible::Ultra)
     }
+}
+
+fn solve_puzzle(input: &str, crucuble: Crucible) -> super::PuzzleResult {
+    let input: Grid<u8> = input.parse().unwrap();
+    let size = input.size();
+    let start = Pos::ZERO;
+    let end = Pos::from((size.x - 1, size.y - 1));
+
+    let path = Path {
+        pos: start,
+        heading: Direction::East,
+        run_len: 0,
+        grid: &input,
+        goal: end,
+        crucible: crucuble,
+    };
+    let Some((_, result)) = pathfinding::directed::astar::astar(
+        &path,
+        Path::astar_succ,
+        Path::guess_cost_to_end,
+        Path::is_complete,
+    ) else {
+        anyhow::bail!("no path found");
+    };
+
+    Ok(result.to_string())
 }
 
 impl<'a> Path<'a> {
@@ -63,6 +75,11 @@ impl<'a> Path<'a> {
     }
 
     fn is_complete(&self) -> bool {
+        // Can only stop after at least 4 blocks
+        if self.crucible == Crucible::Ultra && (self.run_len < 4 || self.run_len > 10) {
+            return false;
+        }
+
         self.pos == self.goal
     }
 
@@ -77,8 +94,21 @@ impl<'a> Path<'a> {
         } else {
             next.run_len = 1;
         }
-        if next.run_len > 3 {
-            return None;
+
+        // validate
+        match self.crucible {
+            Crucible::Normal => {
+                // no more than 3 blocks without a turn
+                if next.run_len > 3 {
+                    return None;
+                }
+            }
+            Crucible::Ultra => {
+                // can only turn after between 4-10 blocks
+                if self.heading != next.heading && (self.run_len < 4 || self.run_len > 10) {
+                    return None;
+                }
+            }
         }
 
         Some(next)

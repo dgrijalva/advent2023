@@ -21,6 +21,21 @@ impl<T> Grid<T> {
         self.0.iter().map(|r| r.iter())
     }
 
+    pub fn row(&self, idx: usize) -> impl Iterator<Item = &T> {
+        self.0[idx].iter()
+    }
+
+    pub fn col(&self, idx: usize) -> impl Iterator<Item = &T> + '_ {
+        self.0.iter().map(move |row| &row[idx])
+    }
+
+    pub fn scan(&self) -> impl Iterator<Item = Pos> {
+        let size = self.size();
+        (0..size.y)
+            .map(move |y| (0..size.x).map(move |x| Pos::from((x, y))))
+            .flatten()
+    }
+
     pub fn step(&self, pos: &Pos, direction: Direction) -> Option<Pos> {
         let size = self.size();
         match direction {
@@ -64,6 +79,15 @@ where
                 .map(|_| std::iter::repeat(value.clone()).take(width).collect_vec())
                 .collect_vec(),
         )
+    }
+}
+
+impl<T> Clone for Grid<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
     }
 }
 

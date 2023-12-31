@@ -5,10 +5,12 @@ pub use puzzle::Puzzle;
 
 mod direction;
 mod grid;
+mod path;
 mod pos;
 
 pub use direction::Direction;
 pub use grid::Grid;
+pub use path::Path;
 pub use pos::Pos;
 
 use clap::Parser;
